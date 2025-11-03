@@ -29,7 +29,6 @@ tasks.test {
 }
 
 tasks.register<Jar>("sourcesJar") {
-    dependsOn("generateJsonSchema2Pojo")
     archiveClassifier.set("sources")
     from(sourceSets.main.get().allSource)
 }
