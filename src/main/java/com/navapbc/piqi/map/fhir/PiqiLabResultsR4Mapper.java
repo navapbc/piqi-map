@@ -5,6 +5,7 @@ import org.hl7.fhir.instance.model.api.IIdType;
 import org.hl7.fhir.r4.model.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,7 +17,31 @@ public class PiqiLabResultsR4Mapper extends PiqiBaseR4Mapper {
     }
 
     @Override
-    public List<PiqiLabResult> mapLabResult(DiagnosticReport diagnosticReport, Map<String, Observation> observations) {
+    public List<PiqiLabResult> mapLabResults(Bundle bundle) {
+        List<PiqiLabResult> piqiLabResults = new ArrayList<>();
+        Map<String, Observation> observations = new HashMap<>();
+        Map<String, DiagnosticReport> diagnosticReports = new HashMap<>();
+        for (Bundle.BundleEntryComponent entry : bundle.getEntry()) {
+            if (entry.getResource() instanceof Observation observation) {
+                observations.put(observation.getIdElement().getIdPart(), observation);
+            }
+            if (entry.getResource() instanceof DiagnosticReport diagnosticReport) {
+                diagnosticReports.put(diagnosticReport.getIdElement().getIdPart(), diagnosticReport);
+            }
+        }
+        if (!diagnosticReports.isEmpty()) {
+            for (DiagnosticReport diagnosticReport : diagnosticReports.values()) {
+                List<PiqiLabResult> results = mapLabResults(diagnosticReport, observations);
+                if (!results.isEmpty()) {
+                    piqiLabResults.addAll(results);
+                }
+            }
+        }
+        return piqiLabResults;
+    }
+
+    @Override
+    public List<PiqiLabResult> mapLabResults(DiagnosticReport diagnosticReport, Map<String, Observation> observations) {
         List<PiqiLabResult> piqiLabResults = new ArrayList<>();
         if (!FhirR4MappingHelper.isLab(diagnosticReport)) {
             return piqiLabResults;

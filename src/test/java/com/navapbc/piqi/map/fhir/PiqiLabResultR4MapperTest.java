@@ -40,6 +40,7 @@ public class PiqiLabResultR4MapperTest {
         IParser parser = ctx.newJsonParser();
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream("synthea.fhir.json");
         Bundle parsed = parser.parseResource(Bundle.class, inputStream);
+
         Map<String, Observation> observations = new HashMap<>();
         Map<String, DiagnosticReport> diagnosticReports = new HashMap<>();
         for (Bundle.BundleEntryComponent entry : parsed.getEntry()) {
@@ -55,7 +56,7 @@ public class PiqiLabResultR4MapperTest {
             PiqiLabResultsR4Mapper mapper = new PiqiLabResultsR4Mapper();
             assertNotNull(diagnosticReports.get("urn:uuid:01d6ee97-ee40-4430-68d1-c5c938abfdad"));
             List<PiqiLabResult> results =
-                    mapper.mapLabResult(diagnosticReports.get("urn:uuid:01d6ee97-ee40-4430-68d1-c5c938abfdad"),
+                    mapper.mapLabResults(diagnosticReports.get("urn:uuid:01d6ee97-ee40-4430-68d1-c5c938abfdad"),
                             observations);
             assertEquals(11, results.size());
             // TODO add additional checks once mapping is completed.
@@ -63,4 +64,15 @@ public class PiqiLabResultR4MapperTest {
             fail("No DiagnosticReport FHIR resources were found.");
         }
     }
+
+    @Test
+    public void testMapperUsingSyntheaBundleAsBundle() {
+        FhirContext ctx = FhirContext.forR4();
+        IParser parser = ctx.newJsonParser();
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream("synthea.fhir.json");
+        Bundle parsed = parser.parseResource(Bundle.class, inputStream);
+        List<PiqiLabResult> results = mapper.mapLabResults(parsed);
+        assertEquals(22, results.size());
+    }
+
 }

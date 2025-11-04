@@ -13,8 +13,15 @@ public class PiqiDemographicsR4Mapper extends PiqiBaseR4Mapper {
     private static final String RACE_SYSTEM = "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race";
 
     @Override
-    public PiqiDemographics mapDemographics(Patient patient) {
+    public PiqiDemographics mapDemographics(Bundle bundle) {
         PiqiDemographics demographics = null;
+        Patient patient = null;
+        for (Bundle.BundleEntryComponent entry : bundle.getEntry()) {
+            if (entry.getResource() instanceof Patient) {
+                patient = (Patient) entry.getResource();
+                break;
+            }
+        }
         if (patient != null) {
             demographics = new PiqiDemographics();
             demographics.setBirthDate(FhirR4MappingHelper.simpleAttributeFromDateAsDate(patient.getBirthDate()));
