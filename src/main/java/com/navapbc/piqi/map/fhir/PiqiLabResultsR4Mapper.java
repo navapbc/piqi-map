@@ -3,6 +3,8 @@ package com.navapbc.piqi.map.fhir;
 import com.navapbc.piqi.model.*;
 import org.hl7.fhir.instance.model.api.IIdType;
 import org.hl7.fhir.r4.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 public class PiqiLabResultsR4Mapper extends PiqiBaseR4Mapper {
+
+    private static final Logger log = LoggerFactory.getLogger(PiqiLabResultsR4Mapper.class);
 
     @Override
     public boolean isMappingClassFor(Class<?> clazz) {
@@ -130,9 +134,31 @@ public class PiqiLabResultsR4Mapper extends PiqiBaseR4Mapper {
                     //piqiLabResult.setPerformedDateTime(diagnosticReport.getIssued().toString("yyyyMMddHHmmss");
                     piqiLabResult.setPerformedDateTime(FhirR4MappingHelper.simpleAttributeFromDateAsDateTime(diagnosticReport.getIssued()));
                 }
-//                if (fhirObservation.hasBodySite()) {
-//                    piqiLabResult.setPerformedSite(MapFhirCodeableConcept(fhirObservation.getBodySite()));
-//                }
+                if (fhirObservation.hasPerformer()) {
+                    for(Reference performer : fhirObservation.getPerformer()) {
+                        log.info("Performer: " + performer.getDisplay());
+//                        if (performer instanceof) {
+//
+//                        }
+                    }
+                    piqiLabResult.setPerformedDateTime(FhirR4MappingHelper.simpleAttributeFromDateAsDateTime(diagnosticReport.getIssued()));
+                } else if (diagnosticReport.hasPerformer()) {
+                    for(Reference performer : diagnosticReport.getPerformer()) {
+                        log.info("Performer: " + performer.getDisplay());
+                        if (performer.hasReference() && !performer.getReference().isEmpty()) {
+                            //Organization?identifier=https://github.com/synthetichealth/synthea|980d9bfa-a344-3bff-8c02-232dd0e8fd34
+                            //mapPerformerToCodeableConcept(performer);
+                            //PiqiCoding piqiCoding = new PiqiCoding();
+                            // TODO parse the string and build the coding.
+                            PiqiCodeableConcept piqiCodeableConcept = new PiqiCodeableConcept();
+                            piqiCodeableConcept.setText(new PiqiSimpleAttribute(performer.getDisplay()));
+                            //piqiCodeableConcept.getCodings().add(piqiCoding);
+                            piqiLabResult.setPerformedSite(piqiCodeableConcept);
+                        } else if (performer.getResource() != null) {
+                            log.info("Performer has resource.");
+                        }
+                    }
+                }
                 if (fhirObservation.hasEncounter()) {
                     Encounter encounter = (Encounter) fhirObservation.getEncounter().getResource();
                     if (encounter.hasLocation()) {
@@ -177,6 +203,9 @@ public class PiqiLabResultsR4Mapper extends PiqiBaseR4Mapper {
                         }
                         break;
                     }
+                } else {
+                    piqiLabResult.setOrder(FhirR4MappingHelper.mapCodeableConcept(diagnosticReport.getCode()));
+                    piqiLabResult.setOrderDate(FhirR4MappingHelper.simpleAttributeFromDateAsDate(diagnosticReport.getIssued()));
                 }
                 // Add the new LabResult to the PIQI data model
                 piqiLabResults.add(piqiLabResult);
@@ -184,6 +213,7 @@ public class PiqiLabResultsR4Mapper extends PiqiBaseR4Mapper {
         }
         return piqiLabResults;
     }
+
     private PiqiCodeableConcept mapStatus(DiagnosticReport.DiagnosticReportStatus diagnosticReportStatus) {
         PiqiCodeableConcept piqiCodeableConcept = new PiqiCodeableConcept();
         if (diagnosticReportStatus != null) {
@@ -194,6 +224,36 @@ public class PiqiLabResultsR4Mapper extends PiqiBaseR4Mapper {
             piqiCoding.setSystem(new PiqiSimpleAttribute(diagnosticReportStatus.getSystem()));
             piqiCodeableConcept.getCodings().add(piqiCoding);
         }
+        return piqiCodeableConcept;
+    }
+
+    private PiqiCodeableConcept mapPerformerToCodeableConcept(Reference performer) {
+        log.debug("performer=[{}]", performer);
+        PiqiCodeableConcept piqiCodeableConcept = null;
+        if (performer != null && performer.hasReference() && !performer.getReference().isEmpty()) {
+            piqiCodeableConcept = new PiqiCodeableConcept();
+            piqiCodeableConcept.setText(new PiqiSimpleAttribute(performer.getDisplay()));
+            if (performer.hasType()) {
+                UriType uriType = performer.getTypeElement();
+                PiqiCoding piqiCoding = new PiqiCoding();
+                piqiCoding.setSystem(new PiqiSimpleAttribute(""));
+                piqiCoding.setCode(new PiqiSimpleAttribute(uriType.getValue()));
+                piqiCodeableConcept.getCodings().add(piqiCoding);
+            } else if (performer.hasReference()) {
+                String reference = performer.getReference();
+                //Organization?identifier=https://github.com/synthetichealth/synthea|980d9bfa-a344-3bff-8c02-232dd0e8fd34
+                PiqiCoding piqiCoding = new PiqiCoding();
+                // TODO parse the string and build the coding.
+                piqiCodeableConcept.getCodings().add(piqiCoding);
+            } else if (performer.hasIdentifier()) {
+                Identifier identifier = performer.getIdentifier();
+                PiqiCoding piqiCoding = new PiqiCoding();
+                piqiCoding.setSystem(new PiqiSimpleAttribute(identifier.getSystem()));
+                piqiCoding.setCode(new PiqiSimpleAttribute(identifier.getValue()));
+                piqiCodeableConcept.getCodings().add(piqiCoding);
+            }
+        }
+        log.debug("piqiCodeableConcept=[{}]", piqiCodeableConcept);
         return piqiCodeableConcept;
     }
 }
