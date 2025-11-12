@@ -136,7 +136,7 @@ public class PiqiLabResultsR4Mapper extends PiqiBaseR4Mapper {
                 }
                 if (fhirObservation.hasPerformer()) {
                     for(Reference performer : fhirObservation.getPerformer()) {
-                        log.info("Performer: " + performer.getDisplay());
+                        log.debug("Performer: " + performer.getDisplay());
 //                        if (performer instanceof) {
 //
 //                        }
@@ -144,7 +144,7 @@ public class PiqiLabResultsR4Mapper extends PiqiBaseR4Mapper {
                     piqiLabResult.setPerformedDateTime(FhirR4MappingHelper.simpleAttributeFromDateAsDateTime(diagnosticReport.getIssued()));
                 } else if (diagnosticReport.hasPerformer()) {
                     for(Reference performer : diagnosticReport.getPerformer()) {
-                        log.info("Performer: " + performer.getDisplay());
+                        log.debug("Performer: " + performer.getDisplay());
                         if (performer.hasReference() && !performer.getReference().isEmpty()) {
                             //Organization?identifier=https://github.com/synthetichealth/synthea|980d9bfa-a344-3bff-8c02-232dd0e8fd34
                             //mapPerformerToCodeableConcept(performer);
@@ -155,7 +155,7 @@ public class PiqiLabResultsR4Mapper extends PiqiBaseR4Mapper {
                             //piqiCodeableConcept.getCodings().add(piqiCoding);
                             piqiLabResult.setPerformedSite(piqiCodeableConcept);
                         } else if (performer.getResource() != null) {
-                            log.info("Performer has resource.");
+                            log.debug("Performer has resource.");
                         }
                     }
                 }
