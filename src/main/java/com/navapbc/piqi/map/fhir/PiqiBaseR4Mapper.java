@@ -26,6 +26,10 @@ public class PiqiBaseR4Mapper extends PiqiBaseMapper {
         return null;
     }
 
+    public PiqiLabResult mapLabResult( Observation observation, Map<String, DiagnosticReport> diagnosticReports) {
+        return null;
+    }
+
     public List<PiqiLabResult> mapLabResults(Bundle bundle) {
         return null;
     }

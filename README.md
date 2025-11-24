@@ -23,7 +23,7 @@ Then you may include as a dependency in your project.  For example, in Gradle:
 ```
 ...
 dependencies {
-    implementation("com.navapbc.piqi:piqi-map:0.1.0")
+    implementation("com.navapbc.piqi:piqi-map:0.2.0")
 ...
 ```
 

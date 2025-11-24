@@ -6,6 +6,7 @@ import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,15 +34,33 @@ public class PiqiLabResultsR4Mapper extends PiqiBaseR4Mapper {
                 diagnosticReports.put(diagnosticReport.getIdElement().getIdPart(), diagnosticReport);
             }
         }
-        if (!diagnosticReports.isEmpty()) {
-            for (DiagnosticReport diagnosticReport : diagnosticReports.values()) {
-                List<PiqiLabResult> results = mapLabResults(diagnosticReport, observations);
-                if (!results.isEmpty()) {
-                    piqiLabResults.addAll(results);
+        if (!observations.isEmpty()) {
+            PiqiLabResult  piqiLabResult = null;
+            for (Observation observation : observations.values()) {
+                if (FhirR4MappingHelper.isLab(observation)) {
+                    piqiLabResult = mapLabResult(observation, diagnosticReports);
+                    if (piqiLabResult != null) {
+                        piqiLabResults.add(piqiLabResult);
+                    }
                 }
             }
         }
         return piqiLabResults;
+    }
+
+    @Override
+    public PiqiLabResult mapLabResult(Observation observation, Map<String, DiagnosticReport> diagnosticReports) {
+        PiqiLabResult piqiLabResult = new PiqiLabResult();
+
+        mapObservation(observation, piqiLabResult);
+
+        DiagnosticReport diagnosticReport = getDiagnosticReport(observation, diagnosticReports);
+
+        if (diagnosticReport != null) {
+            mapDiagnosticReport(diagnosticReport, piqiLabResult);
+        }
+
+        return piqiLabResult;
     }
 
     @Override
@@ -62,111 +81,99 @@ public class PiqiLabResultsR4Mapper extends PiqiBaseR4Mapper {
                 }
             }
             if (fhirObservation != null && FhirR4MappingHelper.isLab(fhirObservation)) {
-                // Create a new PIQI LabResult data class instance
                 PiqiLabResult piqiLabResult = new PiqiLabResult();
-                // Map the test and result
-                if (fhirObservation.getCode() != null) {
-                    piqiLabResult.setTest(FhirR4MappingHelper.mapCodeableConcept(fhirObservation.getCode()));
-                }
-                if (fhirObservation.getValue() != null) {
-                    if (fhirObservation.hasValueQuantity()) {
-                        if (piqiLabResult.getResultValue() == null) {
-                            piqiLabResult.setResultValue(new PiqiObservationValue());
-                        }
-                        piqiLabResult.getResultValue().setNumber(new PiqiSimpleAttribute(fhirObservation.getValueQuantity().getValue().toPlainString()));
-                        CodeableConcept codeableConcept = new CodeableConcept();
-                        codeableConcept.setText(fhirObservation.getValueQuantity().getValue().toPlainString());
-                        Coding coding = new Coding();
-                        coding.setCode(fhirObservation.getValueQuantity().getCode());
-                        coding.setSystem(fhirObservation.getValueQuantity().getSystem());
-                        coding.setDisplay(fhirObservation.getValueQuantity().getDisplay());
-                        codeableConcept.addCoding(coding);
-                        piqiLabResult.setResultUnit(FhirR4MappingHelper.mapCodeableConcept(codeableConcept));
-                    } else if (fhirObservation.hasValueCodeableConcept()) {
-                        if (piqiLabResult.getResultValue() == null) {
-                            piqiLabResult.setResultValue(new PiqiObservationValue());
-                        }
-                        // TODO ???
-                        //piqiLabResult.getResultValue().getCodings().add(FhirR4MappingHelper.mapCodeableConcept(fhirObservation.getValueCodeableConcept()));
-                    } else if (fhirObservation.hasValueStringType()) {
-                        if (piqiLabResult.getResultValue() == null) {
-                            piqiLabResult.setResultValue(new PiqiObservationValue());
-                        }
-                        piqiLabResult.getResultValue().setText(new PiqiSimpleAttribute(fhirObservation.getValueStringType().getValue()));
-                    } else {
-                        // ... map other result types
-                        //log.warn("fhir type not mapped = [{}}", fhirObservation.getValue().fhirType());
-                    }
-                }
+                mapObservation(fhirObservation, piqiLabResult);
+                mapDiagnosticReport(diagnosticReport, piqiLabResult);
+                piqiLabResults.add(piqiLabResult);
+            }
+        }
+        return piqiLabResults;
+    }
 
-                // Map other elements
-                if (fhirObservation.getInterpretation() != null) {
-                    List<CodeableConcept> interepretations = fhirObservation.getInterpretation();
-                    //log.debug("interpretations.size=[{}]", interepretations.size());
-                    if (!interepretations.isEmpty()) {
-                        piqiLabResult.setInterpretation(FhirR4MappingHelper.mapCodeableConcept(fhirObservation.getInterpretation().get(0)));
-                    }
-                }
-                if (fhirObservation.hasReferenceRange()) {
-                    // ... map referenceRange from Observation to PIQI RangeValue
-                    Observation.ObservationReferenceRangeComponent  referenceRange = fhirObservation.getReferenceRangeFirstRep();
-                    PiqiRangeValue piqiRangeValue = new PiqiRangeValue();
-                    piqiRangeValue.setHighValue(new PiqiSimpleAttribute(referenceRange.getHigh().toString()));
-                    piqiRangeValue.setLowValue(new PiqiSimpleAttribute(referenceRange.getLow().toString()));
-                    piqiRangeValue.setText(new PiqiSimpleAttribute(referenceRange.getText()));
-                    piqiLabResult.setReferenceRange(piqiRangeValue);
-                }
-                if (fhirObservation.hasSpecimen()) {
-                    Specimen specimen = (Specimen) fhirObservation.getSpecimen().getResource();
-                    CodeableConcept specimenCodeableConcept = new CodeableConcept();
-                    specimenCodeableConcept.setText(specimen.getText().toString());
-                    Coding coding = new Coding();
-                    coding.setCode(specimenCodeableConcept.getCodingFirstRep().getCode());
-                    coding.setDisplay(specimenCodeableConcept.getCodingFirstRep().getDisplay());
-                    coding.setSystem(specimenCodeableConcept.getCodingFirstRep().getSystem());
-                    specimenCodeableConcept.addCoding(coding);
-                    piqiLabResult.setSpecimenType(FhirR4MappingHelper.mapCodeableConcept(specimenCodeableConcept));
-                }
+    private void mapObservation(@NotNull Observation observation, @NotNull PiqiLabResult piqiLabResult) {
+        if (observation.getCode() != null) {
+            piqiLabResult.setTest(FhirR4MappingHelper.mapCodeableConcept(observation.getCode()));
+        }
 
-                // Map status and date/time from DiagnosticReport
-                piqiLabResult.setResultStatus(mapStatus(diagnosticReport.getStatus()));
-                if (diagnosticReport.getIssued() != null) {
-                    //piqiLabResult.setPerformedDateTime(diagnosticReport.getIssued().toString("yyyyMMddHHmmss");
-                    piqiLabResult.setPerformedDateTime(FhirR4MappingHelper.simpleAttributeFromDateAsDateTime(diagnosticReport.getIssued()));
+        if (observation.getValue() != null) {
+            if (observation.hasValueQuantity()) {
+                if (piqiLabResult.getResultValue() == null) {
+                    piqiLabResult.setResultValue(new PiqiObservationValue());
                 }
-                if (fhirObservation.hasPerformer()) {
-                    for(Reference performer : fhirObservation.getPerformer()) {
-                        log.debug("Performer: " + performer.getDisplay());
+                piqiLabResult.getResultValue().setNumber(new PiqiSimpleAttribute(observation.getValueQuantity().getValue().toPlainString()));
+                CodeableConcept codeableConcept = new CodeableConcept();
+                codeableConcept.setText(observation.getValueQuantity().getValue().toPlainString());
+                Coding coding = new Coding();
+                coding.setCode(observation.getValueQuantity().getCode());
+                coding.setSystem(observation.getValueQuantity().getSystem());
+                coding.setDisplay(observation.getValueQuantity().getDisplay());
+                codeableConcept.addCoding(coding);
+                piqiLabResult.setResultUnit(FhirR4MappingHelper.mapCodeableConcept(codeableConcept));
+            } else if (observation.hasValueCodeableConcept()) {
+                if (piqiLabResult.getResultValue() == null) {
+                    piqiLabResult.setResultValue(new PiqiObservationValue());
+                }
+                // TODO ???
+                //piqiLabResult.getResultValue().getCodings().add(FhirR4MappingHelper.mapCodeableConcept(fhirObservation.getValueCodeableConcept()));
+            } else if (observation.hasValueStringType()) {
+                if (piqiLabResult.getResultValue() == null) {
+                    piqiLabResult.setResultValue(new PiqiObservationValue());
+                }
+                piqiLabResult.getResultValue().setText(new PiqiSimpleAttribute(observation.getValueStringType().getValue()));
+            } else {
+                // ... map other result types
+                //log.warn("fhir type not mapped = [{}}", fhirObservation.getValue().fhirType());
+            }
+        }
+
+        // Map other elements
+        if (observation.getInterpretation() != null) {
+            List<CodeableConcept> interepretations = observation.getInterpretation();
+            //log.debug("interpretations.size=[{}]", interepretations.size());
+            if (!interepretations.isEmpty()) {
+                piqiLabResult.setInterpretation(FhirR4MappingHelper.mapCodeableConcept(observation.getInterpretation().get(0)));
+            }
+        }
+
+        if (observation.hasReferenceRange()) {
+            // ... map referenceRange from Observation to PIQI RangeValue
+            Observation.ObservationReferenceRangeComponent  referenceRange = observation.getReferenceRangeFirstRep();
+            PiqiRangeValue piqiRangeValue = new PiqiRangeValue();
+            piqiRangeValue.setHighValue(new PiqiSimpleAttribute(referenceRange.getHigh().toString()));
+            piqiRangeValue.setLowValue(new PiqiSimpleAttribute(referenceRange.getLow().toString()));
+            piqiRangeValue.setText(new PiqiSimpleAttribute(referenceRange.getText()));
+            piqiLabResult.setReferenceRange(piqiRangeValue);
+        }
+
+        if (observation.hasSpecimen()) {
+            Specimen specimen = (Specimen) observation.getSpecimen().getResource();
+            CodeableConcept specimenCodeableConcept = new CodeableConcept();
+            specimenCodeableConcept.setText(specimen.getText().toString());
+            Coding coding = new Coding();
+            coding.setCode(specimenCodeableConcept.getCodingFirstRep().getCode());
+            coding.setDisplay(specimenCodeableConcept.getCodingFirstRep().getDisplay());
+            coding.setSystem(specimenCodeableConcept.getCodingFirstRep().getSystem());
+            specimenCodeableConcept.addCoding(coding);
+            piqiLabResult.setSpecimenType(FhirR4MappingHelper.mapCodeableConcept(specimenCodeableConcept));
+        }
+
+        if (observation.hasPerformer()) {
+            for(Reference performer : observation.getPerformer()) {
+                log.debug("Performer: " + performer.getDisplay());
 //                        if (performer instanceof) {
 //
 //                        }
-                    }
-                    piqiLabResult.setPerformedDateTime(FhirR4MappingHelper.simpleAttributeFromDateAsDateTime(diagnosticReport.getIssued()));
-                } else if (diagnosticReport.hasPerformer()) {
-                    for(Reference performer : diagnosticReport.getPerformer()) {
-                        log.debug("Performer: " + performer.getDisplay());
-                        if (performer.hasReference() && !performer.getReference().isEmpty()) {
-                            //Organization?identifier=https://github.com/synthetichealth/synthea|980d9bfa-a344-3bff-8c02-232dd0e8fd34
-                            //mapPerformerToCodeableConcept(performer);
-                            //PiqiCoding piqiCoding = new PiqiCoding();
-                            // TODO parse the string and build the coding.
-                            PiqiCodeableConcept piqiCodeableConcept = new PiqiCodeableConcept();
-                            piqiCodeableConcept.setText(new PiqiSimpleAttribute(performer.getDisplay()));
-                            //piqiCodeableConcept.getCodings().add(piqiCoding);
-                            piqiLabResult.setPerformedSite(piqiCodeableConcept);
-                        } else if (performer.getResource() != null) {
-                            log.debug("Performer has resource.");
-                        }
-                    }
-                }
-                if (fhirObservation.hasEncounter()) {
-                    Encounter encounter = (Encounter) fhirObservation.getEncounter().getResource();
-                    if (encounter.hasLocation()) {
-                        List<Encounter.EncounterLocationComponent> locations = encounter.getLocation();
-                        for (Encounter.EncounterLocationComponent location : locations) {
-                            if (location.hasLocation()) {
-                                Location theLocation = location.getLocationTarget();
-                                Location aLocation = (Location) location.getLocation().getResource();
+            }
+        }
+
+        if (observation.hasEncounter()) {
+            Encounter encounter = (Encounter) observation.getEncounter().getResource();
+            if (encounter.hasLocation()) {
+                List<Encounter.EncounterLocationComponent> locations = encounter.getLocation();
+                for (Encounter.EncounterLocationComponent location : locations) {
+                    if (location.hasLocation()) {
+                        Location theLocation = location.getLocationTarget();
+                        Location aLocation = (Location) location.getLocation().getResource();
 //                                if (location.hasPhysicalType()) {
 //                                    piqiLabResult.setPerformedSite(mapCodeableConcept(location.getPhysicalType()));
 //                                    break;
@@ -174,44 +181,101 @@ public class PiqiLabResultsR4Mapper extends PiqiBaseR4Mapper {
 //                                    piqiLabResult.setPerformedSite(mapCodeableConcept(aLocation.getPhysicalType()));
 //                                    break;
 //                                }
-                            }
-                        }
                     }
                 }
-                // basedOn is ServiceRequest (order)
-                if (fhirObservation.hasBasedOn()) {
-                    List<Reference> basedOn = fhirObservation.getBasedOn();
-                    //log.debug("observation basedOn.size=[{}]", basedOn.size());
-                } else if (diagnosticReport.hasBasedOn()) {
-                    List<Reference> basedOn = diagnosticReport.getBasedOn();
-                    //log.debug("diagnosticreport basedOn.size=[{}]", basedOn.size());
-                    for (Reference basedOnReference : basedOn) {
-                        //log.debug("basedOnReference==[{}]", basedOnReference.getResource().fhirType());
-                        if (basedOnReference.getResource().fhirType().equals(ResourceType.ServiceRequest.toString())) {
-                            ServiceRequest serviceRequest = (ServiceRequest) basedOnReference.getResource();
-                            //log.debug("serviceRequest=[{}]", serviceRequest.toString());
-                            if (serviceRequest.hasOrderDetail()) {
-                                piqiLabResult.setOrder(FhirR4MappingHelper.mapCodeableConcept(serviceRequest.getOrderDetailFirstRep()));
-                            } else if (serviceRequest.hasCode()) {
-                                piqiLabResult.setOrder(FhirR4MappingHelper.mapCodeableConcept(serviceRequest.getCode()));
-                            }
-                            if (serviceRequest.hasAuthoredOn()) {
-                                piqiLabResult.setOrderDate(new PiqiSimpleAttribute(serviceRequest.getAuthoredOn().toString()));
-                            } else {
-                                //TODO What's the default?
-                            }
-                        }
-                        break;
-                    }
-                } else {
-                    piqiLabResult.setOrder(FhirR4MappingHelper.mapCodeableConcept(diagnosticReport.getCode()));
-                    piqiLabResult.setOrderDate(FhirR4MappingHelper.simpleAttributeFromDateAsDate(diagnosticReport.getIssued()));
-                }
-                // Add the new LabResult to the PIQI data model
-                piqiLabResults.add(piqiLabResult);
             }
         }
-        return piqiLabResults;
+
+        // basedOn is ServiceRequest (order)
+        if (observation.hasBasedOn()) {
+            List<Reference> basedOn = observation.getBasedOn();
+            //log.debug("observation basedOn.size=[{}]", basedOn.size());
+        }
+
+        if (observation.hasComponent()) {
+            log.debug("***** Observation ID: [{}] has component.", observation.getIdElement().getIdPart());
+            // TODO What should we do with individual components?  Is each one a result?
+//            for (Observation.ObservationComponentComponent component : observation.getComponent()) {
+//
+//            }
+        }
+    }
+
+    private void mapDiagnosticReport(@NotNull DiagnosticReport diagnosticReport, @NotNull PiqiLabResult piqiLabResult) {
+        // Map status and date/time from DiagnosticReport
+        piqiLabResult.setResultStatus(mapStatus(diagnosticReport.getStatus()));
+        if (diagnosticReport.getIssued() != null) {
+            //piqiLabResult.setPerformedDateTime(diagnosticReport.getIssued().toString("yyyyMMddHHmmss");
+            piqiLabResult.setPerformedDateTime(FhirR4MappingHelper.simpleAttributeFromDateAsDateTime(diagnosticReport.getIssued()));
+        }
+        if (diagnosticReport.hasPerformer()) {
+            for(Reference performer : diagnosticReport.getPerformer()) {
+                log.debug("Performer: " + performer.getDisplay());
+                if (performer.hasReference() && !performer.getReference().isEmpty()) {
+                    //Organization?identifier=https://github.com/synthetichealth/synthea|980d9bfa-a344-3bff-8c02-232dd0e8fd34
+                    //mapPerformerToCodeableConcept(performer);
+                    //PiqiCoding piqiCoding = new PiqiCoding();
+                    // TODO parse the string and build the coding.
+                    PiqiCodeableConcept piqiCodeableConcept = new PiqiCodeableConcept();
+                    piqiCodeableConcept.setText(new PiqiSimpleAttribute(performer.getDisplay()));
+                    //piqiCodeableConcept.getCodings().add(piqiCoding);
+                    piqiLabResult.setPerformedSite(piqiCodeableConcept);
+                } else if (performer.getResource() != null) {
+                    log.debug("Performer has resource.");
+                }
+            }
+        }
+        if (diagnosticReport.hasBasedOn()) {
+            List<Reference> basedOn = diagnosticReport.getBasedOn();
+            //log.debug("diagnosticreport basedOn.size=[{}]", basedOn.size());
+            for (Reference basedOnReference : basedOn) {
+                //log.debug("basedOnReference==[{}]", basedOnReference.getResource().fhirType());
+                if (basedOnReference.getResource().fhirType().equals(ResourceType.ServiceRequest.toString())) {
+                    ServiceRequest serviceRequest = (ServiceRequest) basedOnReference.getResource();
+                    //log.debug("serviceRequest=[{}]", serviceRequest.toString());
+                    if (serviceRequest.hasOrderDetail()) {
+                        piqiLabResult.setOrder(FhirR4MappingHelper.mapCodeableConcept(serviceRequest.getOrderDetailFirstRep()));
+                    } else if (serviceRequest.hasCode()) {
+                        piqiLabResult.setOrder(FhirR4MappingHelper.mapCodeableConcept(serviceRequest.getCode()));
+                    }
+                    if (serviceRequest.hasAuthoredOn()) {
+                        piqiLabResult.setOrderDate(new PiqiSimpleAttribute(serviceRequest.getAuthoredOn().toString()));
+                    } else {
+                        //TODO What's the default?
+                    }
+                }
+                break;
+            }
+        } else {
+            piqiLabResult.setOrder(FhirR4MappingHelper.mapCodeableConcept(diagnosticReport.getCode()));
+            piqiLabResult.setOrderDate(FhirR4MappingHelper.simpleAttributeFromDateAsDate(diagnosticReport.getIssued()));
+        }
+    }
+
+    private DiagnosticReport getDiagnosticReport(Observation observation, Map<String, DiagnosticReport> diagnosticReports) {
+        DiagnosticReport diagnosticReport = null;
+        for(DiagnosticReport dr : diagnosticReports.values()) {
+            if (dr.hasResult()) {
+                for (Reference result : dr.getResult()) {
+                    if (result.getResource() instanceof Observation fhirObservation) {
+                        if (fhirObservation.hasId() && fhirObservation.getId().equals(observation.getId())) {
+                            diagnosticReport = dr;
+                            break;
+                        }
+                    } else if (result.hasReferenceElement()) {
+                        IIdType iIdType = result.getReferenceElement();
+                        if (iIdType.hasIdPart() && iIdType.getIdPart().equals(observation.getId())) {
+                            diagnosticReport = dr;
+                            break;
+                        }
+                    }
+                }
+                if (diagnosticReport != null) {
+                    break;
+                }
+            }
+        }
+        return diagnosticReport;
     }
 
     private PiqiCodeableConcept mapStatus(DiagnosticReport.DiagnosticReportStatus diagnosticReportStatus) {

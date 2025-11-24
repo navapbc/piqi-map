@@ -72,7 +72,7 @@ public class PiqiLabResultR4MapperTest {
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream("synthea.fhir.json");
         Bundle parsed = parser.parseResource(Bundle.class, inputStream);
         List<PiqiLabResult> results = mapper.mapLabResults(parsed);
-        assertEquals(22, results.size());
+        assertEquals(37, results.size());
     }
 
 }
