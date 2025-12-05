@@ -114,7 +114,7 @@ public class PiqiLabResultsR4Mapper extends PiqiBaseR4Mapper {
                     piqiLabResult.setResultValue(new PiqiObservationValue());
                 }
                 // TODO ???
-                //piqiLabResult.getResultValue().getCodings().add(FhirR4MappingHelper.mapCodeableConcept(fhirObservation.getValueCodeableConcept()));
+                //piqiLabResult.getResultValue().getCodings().add(FhirR4MappingHelper.mapCodeableConcept(observation.getValueCodeableConcept()));
             } else if (observation.hasValueStringType()) {
                 if (piqiLabResult.getResultValue() == null) {
                     piqiLabResult.setResultValue(new PiqiObservationValue());
@@ -122,21 +122,19 @@ public class PiqiLabResultsR4Mapper extends PiqiBaseR4Mapper {
                 piqiLabResult.getResultValue().setText(new PiqiSimpleAttribute(observation.getValueStringType().getValue()));
             } else {
                 // ... map other result types
-                //log.warn("fhir type not mapped = [{}}", fhirObservation.getValue().fhirType());
+                log.warn("fhir type not mapped = [{}}", observation.getValue().fhirType());
             }
         }
 
         // Map other elements
         if (observation.getInterpretation() != null) {
             List<CodeableConcept> interepretations = observation.getInterpretation();
-            //log.debug("interpretations.size=[{}]", interepretations.size());
             if (!interepretations.isEmpty()) {
                 piqiLabResult.setInterpretation(FhirR4MappingHelper.mapCodeableConcept(observation.getInterpretation().get(0)));
             }
         }
 
         if (observation.hasReferenceRange()) {
-            // ... map referenceRange from Observation to PIQI RangeValue
             Observation.ObservationReferenceRangeComponent  referenceRange = observation.getReferenceRangeFirstRep();
             PiqiRangeValue piqiRangeValue = new PiqiRangeValue();
             piqiRangeValue.setHighValue(new PiqiSimpleAttribute(referenceRange.getHigh().toString()));
@@ -186,7 +184,7 @@ public class PiqiLabResultsR4Mapper extends PiqiBaseR4Mapper {
             }
         }
 
-        // basedOn is ServiceRequest (order)
+        // basedOn is ServiceRequest (order)?
         if (observation.hasBasedOn()) {
             List<Reference> basedOn = observation.getBasedOn();
             //log.debug("observation basedOn.size=[{}]", basedOn.size());

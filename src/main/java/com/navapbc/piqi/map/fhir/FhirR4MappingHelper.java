@@ -69,7 +69,7 @@ public class FhirR4MappingHelper {
     public static PiqiSimpleAttribute simpleAttributeFromDateAsDateTime(Date date) {
         PiqiSimpleAttribute simpleAttribute = new PiqiSimpleAttribute();
         if (date != null) {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             simpleAttribute.setValue(sdf.format(date));
         }
         return simpleAttribute;
