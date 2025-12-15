@@ -217,7 +217,7 @@ public class PiqiLabResultsR4Mapper extends PiqiBaseR4Mapper {
                     PiqiCodeableConcept piqiCodeableConcept = new PiqiCodeableConcept();
                     piqiCodeableConcept.setText(new PiqiSimpleAttribute(performer.getDisplay()));
                     //piqiCodeableConcept.getCodings().add(piqiCoding);
-                    piqiLabResult.setPerformedSite(piqiCodeableConcept);
+                    piqiLabResult.setPerformingSite(piqiCodeableConcept);
                 } else if (performer.getResource() != null) {
                     log.debug("Performer has resource.");
                 }
