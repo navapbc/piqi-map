@@ -1,12 +1,12 @@
-package com.navapbc.piqi.map.fhir;
+package com.navapbc.piqi.map.fhir.clinical;
 
 import ca.uhn.fhir.context.FhirVersionEnum;
-import com.navapbc.piqi.model.PiqiDemographics;
-import com.navapbc.piqi.model.PiqiLabResult;
+import com.navapbc.piqi.map.fhir.PiqiBaseMapper;
+import com.navapbc.piqi.model.clinical.PiqiDemographic;
+import com.navapbc.piqi.model.clinical.PiqiLabResult;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.DiagnosticReport;
 import org.hl7.fhir.r4.model.Observation;
-import org.hl7.fhir.r4.model.Patient;
 
 import java.util.List;
 import java.util.Map;
@@ -18,7 +18,7 @@ public class PiqiBaseR4Mapper extends PiqiBaseMapper {
         return fhirVersion == FhirVersionEnum.R4;
     }
 
-    public PiqiDemographics mapDemographics(Bundle bundle) {
+    public PiqiDemographic mapDemographics(Bundle bundle) {
         return null;
     }
 

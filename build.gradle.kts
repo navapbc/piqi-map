@@ -12,7 +12,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.navapbc.piqi:piqi-model:0.2.0")
+    implementation("com.navapbc.piqi:piqi-model:0.3.0")
     implementation("ca.uhn.hapi.fhir:hapi-fhir-base:8.4.0")
     implementation("ca.uhn.hapi.fhir:hapi-fhir-structures-r4:8.4.0")
     implementation("javax.validation:validation-api:2.0.1.Final")

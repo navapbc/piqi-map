@@ -1,10 +1,10 @@
-package com.navapbc.piqi.map.fhir;
+package com.navapbc.piqi.map.fhir.clinical;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.FhirVersionEnum;
 import ca.uhn.fhir.parser.IParser;
-import com.navapbc.piqi.model.PiqiDemographics;
-import com.navapbc.piqi.model.PiqiLabResult;
+import com.navapbc.piqi.model.clinical.PiqiDemographic;
+import com.navapbc.piqi.model.clinical.PiqiLabResult;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.DiagnosticReport;
 import org.hl7.fhir.r4.model.Observation;
@@ -30,7 +30,7 @@ public class PiqiLabResultR4MapperTest {
 
     @Test
     public void testMappingClassFor() {
-        assertFalse(mapper.isMappingClassFor(PiqiDemographics.class));
+        assertFalse(mapper.isMappingClassFor(PiqiDemographic.class));
         assertTrue(mapper.isMappingClassFor(PiqiLabResult.class));
     }
 

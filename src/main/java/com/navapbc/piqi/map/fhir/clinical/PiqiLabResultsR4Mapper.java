@@ -1,6 +1,6 @@
-package com.navapbc.piqi.map.fhir;
+package com.navapbc.piqi.map.fhir.clinical;
 
-import com.navapbc.piqi.model.*;
+import com.navapbc.piqi.model.clinical.*;
 import org.hl7.fhir.instance.model.api.IIdType;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
@@ -130,18 +130,18 @@ public class PiqiLabResultsR4Mapper extends PiqiBaseR4Mapper {
         if (observation.getInterpretation() != null) {
             List<CodeableConcept> interepretations = observation.getInterpretation();
             if (!interepretations.isEmpty()) {
-                piqiLabResult.setInterpretation(FhirR4MappingHelper.mapCodeableConcept(observation.getInterpretation().get(0)));
+                piqiLabResult.setInterpretation(FhirR4MappingHelper.mapCodeableConcept(observation.getInterpretation().getFirst()));
             }
         }
 
-        if (observation.hasReferenceRange()) {
-            Observation.ObservationReferenceRangeComponent  referenceRange = observation.getReferenceRangeFirstRep();
-            PiqiRangeValue piqiRangeValue = new PiqiRangeValue();
-            piqiRangeValue.setHighValue(new PiqiSimpleAttribute(referenceRange.getHigh().toString()));
-            piqiRangeValue.setLowValue(new PiqiSimpleAttribute(referenceRange.getLow().toString()));
-            piqiRangeValue.setText(new PiqiSimpleAttribute(referenceRange.getText()));
-            piqiLabResult.setReferenceRange(piqiRangeValue);
-        }
+//        if (observation.hasReferenceRange()) {
+//            Observation.ObservationReferenceRangeComponent  referenceRange = observation.getReferenceRangeFirstRep();
+//            PiqiRangeValue piqiRangeValue = new PiqiRangeValue();
+//            piqiRangeValue.setHighValue(new PiqiSimpleAttribute(referenceRange.getHigh().toString()));
+//            piqiRangeValue.setLowValue(new PiqiSimpleAttribute(referenceRange.getLow().toString()));
+//            piqiRangeValue.setText(new PiqiSimpleAttribute(referenceRange.getText()));
+//            piqiLabResult.setReferenceRange(piqiRangeValue);
+//        }
 
         if (observation.hasSpecimen()) {
             Specimen specimen = (Specimen) observation.getSpecimen().getResource();

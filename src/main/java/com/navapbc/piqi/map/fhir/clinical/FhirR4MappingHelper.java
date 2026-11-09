@@ -1,8 +1,8 @@
-package com.navapbc.piqi.map.fhir;
+package com.navapbc.piqi.map.fhir.clinical;
 
-import com.navapbc.piqi.model.PiqiCodeableConcept;
-import com.navapbc.piqi.model.PiqiCoding;
-import com.navapbc.piqi.model.PiqiSimpleAttribute;
+import com.navapbc.piqi.model.clinical.PiqiCodeableConcept;
+import com.navapbc.piqi.model.clinical.PiqiCoding;
+import com.navapbc.piqi.model.clinical.PiqiSimpleAttribute;
 import org.hl7.fhir.r4.model.*;
 
 import java.text.SimpleDateFormat;
@@ -58,19 +58,19 @@ public class FhirR4MappingHelper {
     }
 
     public static PiqiSimpleAttribute simpleAttributeFromDateAsDate(Date date) {
-        PiqiSimpleAttribute simpleAttribute = new PiqiSimpleAttribute();
+        PiqiSimpleAttribute simpleAttribute = new PiqiSimpleAttribute(null);
         if (date != null) {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            simpleAttribute.setValue(sdf.format(date));
+            simpleAttribute = new PiqiSimpleAttribute(sdf.format(date));
         }
         return simpleAttribute;
     }
 
     public static PiqiSimpleAttribute simpleAttributeFromDateAsDateTime(Date date) {
-        PiqiSimpleAttribute simpleAttribute = new PiqiSimpleAttribute();
+        PiqiSimpleAttribute simpleAttribute = new PiqiSimpleAttribute(null);
         if (date != null) {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            simpleAttribute.setValue(sdf.format(date));
+            simpleAttribute = new PiqiSimpleAttribute(sdf.format(date));
         }
         return simpleAttribute;
     }

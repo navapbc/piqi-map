@@ -1,9 +1,9 @@
-package com.navapbc.piqi.map.fhir;
+package com.navapbc.piqi.map.fhir.clinical;
 
-import com.navapbc.piqi.model.PiqiCodeableConcept;
-import com.navapbc.piqi.model.PiqiCoding;
-import com.navapbc.piqi.model.PiqiDemographics;
-import com.navapbc.piqi.model.PiqiSimpleAttribute;
+import com.navapbc.piqi.model.clinical.PiqiCodeableConcept;
+import com.navapbc.piqi.model.clinical.PiqiCoding;
+import com.navapbc.piqi.model.clinical.PiqiDemographic;
+import com.navapbc.piqi.model.clinical.PiqiSimpleAttribute;
 import org.hl7.fhir.r4.model.*;
 
 public class PiqiDemographicsR4Mapper extends PiqiBaseR4Mapper {
@@ -13,8 +13,8 @@ public class PiqiDemographicsR4Mapper extends PiqiBaseR4Mapper {
     private static final String RACE_SYSTEM = "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race";
 
     @Override
-    public PiqiDemographics mapDemographics(Bundle bundle) {
-        PiqiDemographics demographics = null;
+    public PiqiDemographic mapDemographics(Bundle bundle) {
+        PiqiDemographic demographics = null;
         Patient patient = null;
         for (Bundle.BundleEntryComponent entry : bundle.getEntry()) {
             if (entry.getResource() instanceof Patient) {
@@ -23,7 +23,7 @@ public class PiqiDemographicsR4Mapper extends PiqiBaseR4Mapper {
             }
         }
         if (patient != null) {
-            demographics = new PiqiDemographics();
+            demographics = new PiqiDemographic();
             demographics.setBirthDate(FhirR4MappingHelper.simpleAttributeFromDateAsDate(patient.getBirthDate()));
             mapBirthSex(demographics, patient);
             mapDeathAttributes(demographics, patient);
@@ -43,7 +43,7 @@ public class PiqiDemographicsR4Mapper extends PiqiBaseR4Mapper {
         return demographics;
     }
 
-    private void mapBirthSex(PiqiDemographics demographics, Patient patient) {
+    private void mapBirthSex(PiqiDemographic demographics, Patient patient) {
         if (patient.hasExtension(BIRTH_SEX_SYSTEM)) {
             Extension extension = patient.getExtensionByUrl(BIRTH_SEX_SYSTEM);
             if (extension != null && extension.hasValue() && !extension.getValue().isEmpty()) {
@@ -65,7 +65,7 @@ public class PiqiDemographicsR4Mapper extends PiqiBaseR4Mapper {
         }
     }
 
-    private void mapDeathAttributes(PiqiDemographics demographics, Patient patient) {
+    private void mapDeathAttributes(PiqiDemographic demographics, Patient patient) {
         CodeableConcept codeableConcept = new CodeableConcept();
         if (patient.hasDeceased()) {
             if (patient.hasDeceasedBooleanType()) {
@@ -91,7 +91,7 @@ public class PiqiDemographicsR4Mapper extends PiqiBaseR4Mapper {
         }
     }
 
-    private void mapEthnicity(PiqiDemographics demographics, Patient patient) {
+    private void mapEthnicity(PiqiDemographic demographics, Patient patient) {
         if (patient.hasExtension(ETHNICITY_SYSTEM)) {
             Extension extension = patient.getExtensionByUrl(ETHNICITY_SYSTEM);
             if (extension.hasExtension()) {
@@ -120,7 +120,7 @@ public class PiqiDemographicsR4Mapper extends PiqiBaseR4Mapper {
         }
     }
 
-    private void mapGender(PiqiDemographics demographics, Patient patient) {
+    private void mapGender(PiqiDemographic demographics, Patient patient) {
         if (patient.hasGender()) {
             PiqiCoding coding = new PiqiCoding();
             coding.setSystem(new PiqiSimpleAttribute(patient.getGender().getSystem()));
@@ -133,7 +133,7 @@ public class PiqiDemographicsR4Mapper extends PiqiBaseR4Mapper {
         }
     }
 
-    private void mapRace(PiqiDemographics demographics, Patient patient) {
+    private void mapRace(PiqiDemographic demographics, Patient patient) {
         if (patient.hasExtension(RACE_SYSTEM)) {
             Extension extension = patient.getExtensionByUrl(RACE_SYSTEM);
 //                if (extension != null && extension.hasValue() && !extension.getValue().isEmpty()) {
@@ -154,6 +154,6 @@ public class PiqiDemographicsR4Mapper extends PiqiBaseR4Mapper {
 
     @Override
     public boolean isMappingClassFor(Class<?> clazz) {
-        return clazz.equals(PiqiDemographics.class);
+        return clazz.equals(PiqiDemographic.class);
     }
 }
