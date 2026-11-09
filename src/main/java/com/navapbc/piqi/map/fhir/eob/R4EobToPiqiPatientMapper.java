@@ -551,32 +551,27 @@ public class R4EobToPiqiPatientMapper extends PiqiBaseR4Mapper {
         PiqiProvider p = new PiqiProvider();
         p.setCareTeamRole(codeableConcept(role));
 
-        switch (r) {
-            case Practitioner pr -> {
-                p.setProviderNpi(simpleAttribute(npi(pr.getIdentifier())));
-                if (pr.hasName()) {
-                    p.setProviderName(simpleAttribute(pr.getNameFirstRep().getNameAsSingleString()));
-                }
-                p.setProviderAddress(simpleAttribute(addr(pr.getAddressFirstRep())));
-                p.setProviderType(codeableConcept(pr.getQualificationFirstRep().getCode()));
+        if (r instanceof Practitioner pr) {
+            p.setProviderNpi(simpleAttribute(npi(pr.getIdentifier())));
+            if (pr.hasName()) {
+                p.setProviderName(simpleAttribute(pr.getNameFirstRep().getNameAsSingleString()));
             }
-            case Organization org -> {
-                p.setProviderNpi(simpleAttribute(npi(org.getIdentifier())));
-                p.setProviderName(simpleAttribute(org.getName()));
-                p.setProviderAddress(simpleAttribute(addr(org.getAddressFirstRep())));
-                p.setProviderType(codeableConcept(org.getTypeFirstRep()));
-            }
-            case PractitionerRole prole -> {
-                PiqiProvider base = mapProvider(resolve.apply(prole.getPractitioner()), role, resolve);
-                if (base == null) {
-                    return null;
-                }
-                base.setProviderType(codeableConcept(prole.getSpecialtyFirstRep()));
-                return base;
-            }
-            default -> {
+            p.setProviderAddress(simpleAttribute(addr(pr.getAddressFirstRep())));
+            p.setProviderType(codeableConcept(pr.getQualificationFirstRep().getCode()));
+        } else if (r instanceof Organization org) {
+            p.setProviderNpi(simpleAttribute(npi(org.getIdentifier())));
+            p.setProviderName(simpleAttribute(org.getName()));
+            p.setProviderAddress(simpleAttribute(addr(org.getAddressFirstRep())));
+            p.setProviderType(codeableConcept(org.getTypeFirstRep()));
+        } else if (r instanceof PractitionerRole prole) {
+            PiqiProvider base = mapProvider(resolve.apply(prole.getPractitioner()), role, resolve);
+            if (base == null) {
                 return null;
             }
+            base.setProviderType(codeableConcept(prole.getSpecialtyFirstRep()));
+            return base;
+        } else {
+            return null;
         }
         // providerContractingStatus, siteOfServiceNetworkStatus, providerPayerSpecificIdentifier: not mapped
         return p;

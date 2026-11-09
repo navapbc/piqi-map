@@ -4,7 +4,12 @@ plugins {
 }
 
 group = "com.navapbc.piqi"
-version = "0.2.2"
+version = "0.3.0"
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
 
 repositories {
     mavenCentral()
